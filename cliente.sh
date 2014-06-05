@@ -14,7 +14,7 @@ function print_commands()
    echo "Escribe un mensaje o alguno de los siguientes comandos:"
    echo "  +       : Aumenta el volumen"
    echo "  -       : Disminuye el volumen"
-   echo "  _bye    : Disminuye el volumen"
+   echo "  _bye    : Salir del chat"
    echo "  _who    : Muestra usuarios conectados"
    echo "  _whoami : Muestra nombre con el que estas conectado"
    echo "  _help   : Muestra esta pantalla"
