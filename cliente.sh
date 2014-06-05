@@ -123,7 +123,7 @@ echo "Intentando conectar con el servidor..."
 #Intento de conexion:
 for ((i=0;i<3;i++))
 {
-   echo "conn|$USUARIO|$PUERTO_CLIENTE|$(ifconfig wlan0 2>/dev/null|awk '/inet addr:/ {print $2}'|sed 's/addr://')" | nc $IP_SERVIDOR $PUERTO_SERVIDOR;
+   echo "conn|$USUARIO|$PUERTO_CLIENTE|$(ifconfig eth0 2>/dev/null|awk '/inet addr:/ {print $2} /Direc. inet:/{print $2}'|sed 's/addr:\|inet://')" | nc $IP_SERVIDOR $PUERTO_SERVIDOR;
    echo "Solicitud mandada. Esperando..."
 
    #auto wake up from read in case it gets no response from server.
@@ -160,8 +160,8 @@ fi
 while read linea_reproductor
 do
    echo "$linea_reproductor" | \
-   text2wave -scale $(get_param VOLUMEN) | \
-   aplay &> /dev/null &
+   ./text2wave -scale $(get_param VOLUMEN) | \
+   aplay &> /dev/null
 done < $PLAYER_IN_PIPE &
 
 # 2 Parseamos las lineas recibidas del servidor
@@ -175,9 +175,9 @@ do
    fi
 
    echo "$linea_servidor" | \
-      grep -v -e ^"_IGN_|" -e "^$USUARIO"   | \
-      gawk -F'|' '/_BYE_/{ print $1" se ha desconectado"; next}
-                  /_HI_/{  print $1" ha entrado al chat"; next}
+      grep -v -e ^"_IGN_|" | \
+      gawk -F'|' '/^[[:alpha:]]*\|_BYE_/{ print $1" se ha desconectado"; next}
+                  /^[[:alpha:]]*\|_HI_/{  print $1" ha entrado al chat"; next}
                   /_SERVER_\|_WHO_/{
                            printf "%s","Usuarios conectados: ";
                            for(i=3;i<NF-1;i++)
@@ -240,7 +240,7 @@ do
       ;;
    esac
 
-   $MANDAR && echo $linea > $DATA_OUT_PIPE && echo "Enviado '$linea'"
+   [ "$linea" != "" ] && $MANDAR && echo $linea > $DATA_OUT_PIPE && echo "Enviado '$linea'"
 done
 
 Shutdown &> /dev/null

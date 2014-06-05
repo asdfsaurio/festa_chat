@@ -63,8 +63,7 @@ function broadcast()
 #$1 -> cliente al que mandar la lista
 function mandar_listado()
 {
-   set -x
-   echo "_SERVER_|_WHO_|$(get_all_logged_users | tr "\n" "|")" > \
+   echo "_SERVER_|_WHO_|$(get_all_logged_users | tr '\n' '|')" > \
         $(get_client $1 | cut -d"|" -f2)
 }
 
@@ -131,6 +130,7 @@ nc -w 1 -d -l -k $PUERTO > connection_pipe &
 export LISTENER_PID=$!
 
 indexador_clientes=0;
+> $LOGFILE
 
 #Incomming connections manager
 cat connection_pipe | \
@@ -211,11 +211,16 @@ registra_pid "cat_log" "$!"
 
 echo "DATOS CLIENTES:"
 
-cat s_data_pipe  | \
+cat s_data_pipe |  \
    tee .conv.log | \
    while read linea_chat
    do
       HACER_BCAST=true
+      #linea_chat="$(echo $linea_chat | sed 's/[^[:alpha:]|[:digit:]]/ /g')"
+      usuario=${linea_chat%%|*}
+      texto=${linea_chat##*|}
+      texto="$(echo $texto  | sed 's/[^[:alpha:]|[:digit:]]/ /g')"
+      comando=${texto:0:1}
       if [ "${linea_chat##*|}" == "_BYE_" ] #algun cliente se desconecta
       then
          echo "Terminando ${linea_chat%%|_BYE_} por desconexion de usuario"
@@ -225,15 +230,15 @@ cat s_data_pipe  | \
          echo "Who -> ${linea_chat%%|_WHO_}"
          mandar_listado ${linea_chat%%|_WHO_}
          HACER_BCAST=false
+      elif [ "$comando" == "_" -o "$comando" == "" ] #ignoramos comandos no reconocidos o ilegales y mensajes vacios
+      then
+         HACER_BCAST=false
       fi
 
 
-      $HACER_BCAST && broadcast $linea_chat
-      #for fifo in $(get_all_client_fifos)
-      #do
-      #   #echo "$linea_chat por $fifo";
-      #   echo "$linea_chat" > $fifo;
-      #done
+      #$HACER_BCAST && broadcast $linea_chat
+      $HACER_BCAST && broadcast "$usuario|$texto"
+      echo "Recibido $linea_chat"
    done
 
 
